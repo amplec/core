@@ -1,0 +1,9 @@
+
+
+services:
+  core:
+    container_name: core
+    build: 
+      context: .
+    ports:
+      - 5000:5000
