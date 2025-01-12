@@ -1,26 +1,28 @@
 from typing import Optional
 from utils.logger import Logger
-import requests, uuid
+import requests, uuid, os
+from dotenv import load_dotenv
 
 class Amplec:
     """
     This class is named after the amplec project, as this class will house the most important core functionalities for this project.
     """
     
-    def __init__(self, logger:Logger, karton_result_api_url:str, global_system_prompt:Optional[str]=None):
+    def __init__(self, logger:Logger, global_system_prompt:Optional[str]=None):
         """
         This is the constructor method for the Amplec class
         
         :param logger: This is a Logger object from the Amplec Utils pip Module.
         :type logger: Logger
-        :param karton_result_api_url: This is the URL to the karton result API
-        :type karton_result_api_url: str
         :param global_system_prompt: IF you set this, it will override the default system prompt, which ONLY will be used if the user does not provide a system prompt himself.
         :type global_system_prompt: Optional[str]
         """
         self.log = logger
         
-        self.karton_result_api_url = karton_result_api_url
+        load_dotenv()
+        self.karton_result_api_url = os.getenv("KARTON_RESULT_API_URL")
+        if not self.karton_result_api_url:
+            raise ValueError("KARTON_RESULT_API_URL is not set")
         
         if global_system_prompt:
             self.system_prompt = global_system_prompt
