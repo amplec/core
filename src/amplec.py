@@ -2,6 +2,7 @@ from typing import Optional
 from utils.logger import Logger
 import requests, uuid, os
 from dotenv import load_dotenv
+from preprocessing.karton_preprocessor import KartonPreprocessor
 
 class Amplec:
     """
@@ -28,7 +29,7 @@ class Amplec:
             self.system_prompt = global_system_prompt
         else:
             self.system_prompt = "You are a helper system for a malware analyst. You will be provided with data from a malware analysis system. Your task is it to answer the questions from the analyst. Do not guess or infer. If some information is not available, just say so."
-            
+        self.log.info("Amplec initialized")
     
     def process(self, karton_submission_id:str, regex:Optional[str]=None):
         """
@@ -39,7 +40,11 @@ class Amplec:
         karton_result = self._retrieve_karton_result(karton_submission_id)
         self.log.info(f"Succesfully retrieved karton result with ID {karton_submission_id}")
         
-        return "Processing Worked!"
+        pre = KartonPreprocessor(self.log)
+        
+        preprocessed_data = pre.process(karton_result)
+        
+        return preprocessed_data
         
         
     def _retrieve_karton_result(self, submission_id:str) -> dict:
