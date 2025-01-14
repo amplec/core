@@ -36,11 +36,12 @@ class Enricher(Preprocessor):
         
         # Enrich for Used TTPs
         ttp_containing_sentences = [sentence for sentence in data if re.search(r"T\d{4}(\.\d{3})?", sentence)]
+        self.log.info(f"Found {len(ttp_containing_sentences)} sentences containing TTPs")
         enriched_data_to_be_added.extend(self._enrich_ttps(ttp_containing_sentences))
         
+        data.extend(enriched_data_to_be_added)
         
-        
-        return data.extend(enriched_data_to_be_added)
+        return data
     
     def _enrich_ttps(self, ttp_containing_sentences:List[str]) -> str:
         """
@@ -55,16 +56,18 @@ class Enricher(Preprocessor):
         
         ttps = set()
         for sentence in ttp_containing_sentences:
-            ttp_list = re.findall(r"T\d{4}(\.\d{3})?", sentence)
+            ttp_list = re.findall(r"(T\d{4}(?:\.\d{3})?)", sentence)
             for ttp in ttp_list:
                 ttps.add(ttp)
+        
+        self.log.info(f"Found these TTPs: {ttps}")
         
         for ttp in ttps:
             if not ttp in self.ttp_context.keys():
                 self.log.error(f"No context information found for TTP: {ttp}")
                 continue
             context = self.ttp_context[ttp]
-            context_sentences.append(f"TTP {ttp} has the name {context['name']} and the description {context['description']}")
+            context_sentences.append(f"TTP {ttp} has the NAME {context['name']} and the DESCRIPTION {context['description']}")
         
         return context_sentences
     
