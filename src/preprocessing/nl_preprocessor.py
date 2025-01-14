@@ -33,19 +33,49 @@ class NLPreprocessor(Preprocessor):
         """
         Translates the JSON structurized data into a more natural language equivalent text.
         
+        This method expects a JSON looking like this:
+        ```json
+        {
+            "configs": {...},
+            "hierarchy": {...},
+            "results": {...},
+            "triage_results": {...},
+        }
+        ```
+        
         :param data: JSON structurized data
         :type data: dict
         :return: natural language equivalent text
         """
         
         naturalized_data = []
+        try:
+            #naturalized_data.extend(self.naturalize_configs(data["configs"]))
+            #naturalized_data.extend(self.naturalize_hierarchy(data["hierarchy"]))
+            #naturalized_data.extend(self.naturalize_results(data["results"]))
+            for key, value in data["triage_results"].items():
+                naturalized_data.extend(self.naturalize_triage_results(value))
+        except KeyError as e:
+            self.log.error(f"Naturalize could not find the data for the key {e}")
+               
+        return naturalized_data
+    
+    
+    def naturalize_triage_results(self, data:dict) -> List[str]:
+        """
+        This method will be used to only naturalize the triage results
+        :param data: triage results
+        :type data: dict
+        :return: naturalized triage results
+        """
         
+        naturalized_data = []
+         
         headline = self._search_for_headline(data)
         
         naturalized_data.extend(self._recursive_naturalize(data, headline))
         
         return naturalized_data
-    
     
     def _search_for_headline(self, data:dict) -> str:
         """
