@@ -29,8 +29,48 @@ class Amplec:
         self.persistence = SimplePersistence(persistence_folder_path, logger)
         
         self.log.info("Amplec initialized")
+        
+    def generate_llm_data_input_from_submission_id(self, karton_submission_id:str, regex_or_search:str, use_regex:Optional[bool], reprocess:Optional[bool]=False) -> list[str]:
+        """
+        This method will generate the INPUT DATA for the LLM. This method will return a list of strings which underwent the following steps.
+        
+        1. Karton Submission ID is used to retrieve the karton result from the result API
+        2. The karton result is preprocessed by the KartonPreprocessor, this includes:
+            a) Normalizing and Cleaning the data
+            b) Retrieving further data, such as Triage Results.
+        3. The preprocessed data (at this stage still as JSON) is *naturalized* (turned into a list of sentences in human readable form)
+        4. The naturalized data is then enriched currently this includes:
+            a) Adding Context Blocks to ttps found in the data
+            b) more to come...
+        5. The enriched data is then filtered. This can be done by providing a regex or search string. Depending on the use_regex bool, the regex_or_search String will be used as a regex or as a search string.
+        
+        Generally the enriched data will be stored in a persistence folder and WON'T be reprocessed if the same submission ID is provided again, HOWEVER this can be forced by reprocess bool to True.
+        
+        :param karton_submission_id: This is the submission ID for the karton result
+        :type karton_submission_id: str
+        :param regex_or_search: This is a regex or search string to filter the data
+        :type regex_or_search: str
+        :param use_regex: This is a boolean to determine if the regex_or_search should be used as a regex or search string
+        :type use_regex: Optional[bool]
+        :param reprocess: This is an optional parameter to reprocess the data, defaults to False
+        :type reprocess: Optional[bool]
+        :return: The generated LLM input data
+        """
+        
+        
+        # first we need to get the enriched data (either from persistence or by processing the karton result)
+        enriched_data = self._process_submission_ID(karton_submission_id, reprocess)
+        
+        search_result = []
+        if use_regex:
+            pass #TODO: Implement regex filtering
+        else:
+            pass #TODO: Implement search string filtering
+        
+        return search_result
+        
     
-    def _process_submission_ID(self, karton_submission_id:str, regex:str, repreprocess:Optional[bool]=False) -> list[str]:
+    def _process_submission_ID(self, karton_submission_id:str, repreprocess:Optional[bool]=False) -> list[str]:
         """
         This method will process the submitted data and return the result
         
