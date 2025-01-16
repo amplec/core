@@ -26,12 +26,15 @@ def process():
     
     resp_dict = response_dict.copy()
    
-    submission_id = request.form.get("submission_id")
-    regex = request.form.get("regex")
-    system_prompt = request.form.get("system_prompt")
+    karton_submission_id = request.form.get("karton_submission_id")
+    regex_or_search = request.form.get("regex_or_search")
+    use_regex = request.form.get("use_regex")
+    if use_regex is not None:
+        use_regex = use_regex.lower() in ['true', '1', 't', 'y', 'yes']
+    reprocess = request.form.get("reprocess", False) # This is the only optional parameter, where we can set a default value (False)
      
     missing_params = []
-    for key in ['submission_id', 'regex']:
+    for key in ['karton_submission_id', 'regex_or_search', 'use_regex']:
         if locals()[key] is None:
             missing_params.append(key)
 
@@ -42,10 +45,10 @@ def process():
     
     try:
         logger = Logger("console")
-        amplec = Amplec(logger, system_prompt)
+        amplec = Amplec(logger)
         resp_dict["message"] = "Processing Worked!"
         resp_dict["status"] = "success"
-        resp_dict["data"] = amplec.process(submission_id, regex)
+        resp_dict["data"] = amplec.generate_llm_data_input_from_submission_id(karton_submission_id, regex_or_search, use_regex, reprocess)
         return jsonify(resp_dict), 200
         
     except Exception as e:
