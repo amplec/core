@@ -56,15 +56,15 @@ class Chatter:
         
         response = self.client.chat(messages=messages, model=model)
         
-        if not response.get("messages"):
+        if not response.get("message"):
             self.log.error("No messages in response!, response: " + str(response))
-            raise ValueError("No messages in response")
+            raise ValueError("No messages in response " + str(response))
         
-        if not response.get("messages").get("content"):
+        if not response.get("message").get("content"):
             self.log.error("No content in messages!, response: " + str(response))
             raise ValueError("No content in messages")
         
-        return response.get("messages").get("content")
+        return response.get("message").get("content")
         
         
         
