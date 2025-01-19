@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify
 import requests, json
 from amplec import Amplec
 from utils import Logger
-
+from chatter import Chatter
 
 app = Flask(__name__)
 
@@ -64,4 +64,29 @@ def get_health():
     """
 
     return jsonify({'status': 'success', 'message': 'The API is healthy', 'data':{}}), 200
+
+@app.route("/chat", methods=["POST"])
+def chat():
+    """
+    This function will be used as an API-Endpoint to chat with the API
+    """
+
+    resp_dict = response_dict.copy()
+    system_message = request.form.get("system_message")
+    user_message = request.form.get("user_message")
+
+    messages_list = [{"role": "system", "content": system_message}, {"role": "user", "content": user_message}]
+    
+    try:
+        logger = Logger("console")
+        chat = Chatter(logger, "llama3.2:latest")
+        resp_dict['data'] = chat.chat(messages_list)
+        resp_dict['message'] = "Chat worked!"
+        resp_dict['status'] = "success"
+        return jsonify(resp_dict), 200
+
+    except Exception as e:
+        resp_dict['message'] = str(e)
+        resp_dict['status'] = 'error'
+        return jsonify(resp_dict), 500
     
