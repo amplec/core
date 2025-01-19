@@ -7,7 +7,12 @@ services:
       - 5000:5000
     volumes:
       - amplec_persistence:/home/core/persistence
+    networks:
+      - amplec
 
+networks:
+  amplec:
+    name: amplec
 volumes:
   amplec_persistence:
     name: amplec_persistence
