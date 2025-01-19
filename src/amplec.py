@@ -84,6 +84,9 @@ class Amplec:
                 if lower_search in lower_line:
                     search_result.append(line)
         
+        if not search_result:
+            self.log.warning(f"No results found for search '{regex_or_search}' in submission with ID {karton_submission_id}")
+        
         return search_result
         
     
