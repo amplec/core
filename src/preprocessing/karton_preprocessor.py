@@ -309,8 +309,16 @@ class KartonPreprocessor(Preprocessor):
             "family": config_payload.get("attributes", {}).get("family", ""),
             "type": config_payload.get("attributes", {}).get("type", ""),
             "vetted": config_payload.get("attributes", {}).get("vetted", "false"),
-            "created_by": config_payload.get("created_by", ""),
-            "data": config_payload.get("data", {}),           
+            "created_by": config_payload.get("created_by", ""),           
         }
+        
+        mem_ret_dict = ret_dict.copy()
+        mem_ret_dict["data"] = config_payload.get("data", "")
+        
+        try:
+            ret_dict.update(config_payload.get("data", {}))
+        except:
+            self.log.error(f"Failed to do the scetchy update for config payload: {config_payload.get('sha256', 'N/A')}")
+            ret_dict = mem_ret_dict
         
         return ret_dict
