@@ -319,8 +319,6 @@ class NLPreprocessor(Preprocessor):
         
         for sha256, list_of_result_dicts in data.items(): #Keep in mind, that the values of this dict, are NOT dicts themselves, but lists of dicts
             for result_dict in list_of_result_dicts:
-                if result_dict.get("type", "") == "triage":
-                    continue
                 headline = f"#sha256 {sha256} is a result "
                 naturalized_data.extend(self._recursive_naturalize(result_dict, headline))
         
