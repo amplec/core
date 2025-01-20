@@ -31,8 +31,10 @@ def process():
     use_regex = request.form.get("use_regex")
     if use_regex is not None:
         use_regex = use_regex.lower() in ['true', '1', 't', 'y', 'yes']
-    reprocess = request.form.get("reprocess", False) # This is the only optional parameter, where we can set a default value (False)
-     
+    reprocess = request.form.get("reprocess")
+    if reprocess is not None:
+        reprocess = reprocess.lower() in ['true', '1', 't', 'y', 'yes']
+    
     missing_params = []
     for key in ['karton_submission_id', 'regex_or_search', 'use_regex']:
         if locals()[key] is None:
