@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
-import requests, json
+from dotenv import load_dotenv
+import os
 from amplec import Amplec
 from utils import Logger
 from chatter import Chatter
@@ -11,6 +12,12 @@ response_dict = {
     'message': '',
     'data': {}
 }
+
+load_dotenv()
+elastic_url = os.getenv("ELASTIC_URL")
+elastic_api_key = os.getenv("ELASTIC_API_KEY")
+if not (elastic_url and elastic_api_key):
+    raise ValueError("ELASTIC_URL or ELASTIC_API_KEY is not set")
 
 
 
@@ -46,7 +53,7 @@ def process():
         return jsonify(resp_dict), 400
     
     try:
-        logger = Logger("console")
+        logger = Logger("elastic", elastic_url=elastic_url, elastic_key=elastic_api_key)
         amplec = Amplec(logger)
         resp_dict["message"] = "Processing Worked!"
         resp_dict["status"] = "success"
@@ -80,7 +87,7 @@ def chat():
     messages_list = [{"role": "system", "content": system_message}, {"role": "user", "content": user_message}]
     
     try:
-        logger = Logger("console")
+        logger = Logger("elastic", elastic_url=elastic_url, elastic_key=elastic_api_key)
         chat = Chatter(logger, "llama3.2:latest")
         resp_dict['data'] = chat.chat(messages_list)
         resp_dict['message'] = "Chat worked!"
