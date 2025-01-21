@@ -194,7 +194,7 @@ class KartonPreprocessor(Preprocessor):
                             return_dict["iocs"]["ips"].append(ip)
                     for url in iocs.get("urls", []):
                         if url not in return_dict["iocs"]["urls"]:
-                            return_dict["iocs"]["urls"].append(url)
+                            return_dict["iocs"]["urls"].append(url.replace("http://", "hxxp://").replace("https://", "hxxps://"))
                     for email in iocs.get("emails", []):
                         if email not in return_dict["iocs"]["emails"]:
                             return_dict["iocs"]["emails"].append(email)
