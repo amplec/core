@@ -1,8 +1,11 @@
 from utils.logger import Logger
 from dotenv import load_dotenv
 import os
-from ollama import Client
+from langchain_ollama import ChatOllama
+from langchain_core.tools import tool
+from langchain_core.messages import SystemMessage, HumanMessage
 from typing import Optional
+from amplec import Amplec
 
 
 class Chatter:
@@ -11,7 +14,7 @@ class Chatter:
     This means mainly interacting with the LLM and handling the conversations.
     """
     
-    def __init__(self, logger:Logger, model:str):
+    def __init__(self, logger:Logger, model:str, ample_persistence_folder_path:Optional[str]=None, override_submission_id:Optional[str]=None) -> None:
         """
         This is the constructor method for the Chatter class
         
@@ -19,52 +22,111 @@ class Chatter:
         :type logger: Logger
         :param model: This is a string with the model to use in the chat
         :type model: str
+        :param ample_persistence_folder_path: This is the folder path where the persistence data will be stored. ATTENTION, this is optional, and when not provided the path will be tried to load from the .env file, if neither .env nor parameter is provided, an error will be raised.
+        :type ample_persistence_folder_path: Optional[str]
+        :param override_submission_id: This is a string with the submission ID to override the submission ID for the use in the tool_call.
+        :type override_submission_id: Optional[str]
         """
         self.log = logger
         
         self.model = model
         load_dotenv()
         
-        self.api_key = os.getenv("OLLAMA_API_KEY")
         self.url = os.getenv("OLLAMA_URL")
+        self.amplec = Amplec(logger, ample_persistence_folder_path)
+        self.override_submission_id = override_submission_id
         
-        if not self.api_key:
-            raise ValueError("OLLAMA_API_KEY is not set")
         if not self.url:
             raise ValueError("OLLAMA_URL is not set")
         
-        custom_kwargs_for_hxxp_client = {
-            "headers": {
-                "Authorization": f"Bearer {self.api_key}",
-            },
-            "verify": False,
-        }
-        
-        self.client = Client(self.url, **custom_kwargs_for_hxxp_client)
-        
-    def chat(self, messages:list[str], override_model:Optional[str]=None) -> str:
+        self.reprocess = False
+           
+    def chat(self, system_message:str, user_message:str, use_tool_calling:Optional[bool]=False, override_model:Optional[str]=None, reprocess:Optional[bool]=False) -> str:
         """
         This method will chat with the llm and return the result
         
-        :param messages: This is a list of strings with the messages to chat with the llm
-        :type messages: list[str]
+        :param system_message: This is the system message to start the conversation
+        :type system_message: str
+        :param user_message: This is the user message to start the conversation
+        :type user_message: str
+        :param use_tool_calling: This is a bool to indicate if the tool calling should be used default is False
+        :type use_tool_calling: Optional[bool]
         :param override_model: This is a string with the model to use in the chat, IF you want to override the model set by the object.
         :type override_model: Optional[str]
+        :param reprocess: This is a bool to indicate if the data should be reprocessed, default is False
+        :type reprocess: Optional[bool]
         """
         
         model = override_model if override_model else self.model
+        self.reprocess = reprocess
         
-        response = self.client.chat(messages=messages, model=model)
+        chat = ChatOllama(base_url=self.url, model=model)
         
-        if not response.get("message"):
-            self.log.error("No messages in response!, response: " + str(response))
-            raise ValueError("No messages in response " + str(response))
+        @tool
+        def search_for_sample_info(sample_id: str, search_term:str) -> str:
+            """Get the search results for a given search term in the context of a malware sample.
+            For example, a search term could be "ttp" for the Tactics, Techniques, and Procedures used by the malware, or "url" for URLs found in the malware.
+            Only use one search term at a time, for example "domain" or "ttp" BUT NEVER two terms in one operation like "domain ttp".
+
+            Args:
+                sample_id: The internal identifier of the malware sample
+                search_term: The term to search for in the context of the malware sample
+
+            Returns:
+                A human readable list of information in regard to the sample. As a multiline string.
+            """
+            if self.override_submission_id:
+                sample_id = self.override_submission_id
+                self.log.info("Overriding sample_id with: " + sample_id)
+            self.log.info("Searching for sample info with sample_id: " + sample_id + " and search_term: " + search_term)
+            try:
+                ret_list = self.amplec.generate_llm_data_input_from_submission_id(sample_id, search_term, False, self.reprocess)
+                if not ret_list:
+                    if " " in search_term:
+                        self.log.warning("Multiple search terms detected, splitting them and searching for each term separately")
+                        for term in search_term.split(" "):
+                            temp_list = self.amplec.generate_llm_data_input_from_submission_id(sample_id, term, False, self.reprocess)
+                            if temp_list != ["For the given search term, there was no information available, please say so to the user and dont hallucinate!"]:
+                                ret_list.extend(temp_list)
+                        if not ret_list:
+                            ret_list = ["For the given search term, there was no information available, please say so to the user and dont hallucinate!"]
+                    else:
+                        ret_list = ["For the given search term, there was no information available, please say so to the user and dont hallucinate!"]
+                
+                ret_str = ""
+                for item in ret_list:
+                    ret_str += item + "\n"
+            except Exception as e:
+                ret_str = "An error occurred: " + str(e)
+            
+            return ret_str
+            
+        prompt = [
+            SystemMessage(system_message),
+            HumanMessage(user_message)
+        ]
+            
+        if use_tool_calling:
+            chat = chat.bind_tools([search_for_sample_info]) 
+            ai_msg = chat.invoke(prompt)
+            if not ai_msg.tool_calls:
+                self.log.error("No tools were called in the chat! ai_msg: " + str(ai_msg))
+                
+            for tool_call in ai_msg.tool_calls:
+                selected_tool = {"search_for_sample_info": search_for_sample_info}[tool_call["name"].lower()]
+                tool_msg = selected_tool.invoke(tool_call)
+                prompt.append(tool_msg)
         
-        if not response.get("message").get("content"):
-            self.log.error("No content in messages!, response: " + str(response))
-            raise ValueError("No content in messages")
+        llm_response = chat.invoke(prompt)
         
-        return response.get("message").get("content")
+        if not llm_response.content:
+            self.log.error("No content in the llm_response, response: " + str(llm_response))
+            raise ValueError("No content response")
+        
+        return llm_response.content
+        
+        
+        
         
         
         
