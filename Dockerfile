@@ -12,7 +12,8 @@ RUN apt-get update && apt-get install -y curl git && \
                 requests \
                 waitress \
                 python-dotenv \ 
-                ollama && \
+                langchain \
+                langchain-ollama && \
     mkdir /home/core/persistence && \
     chown core:core -R /home/core
 
