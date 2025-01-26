@@ -77,19 +77,30 @@ def get_health():
 @app.route("/chat", methods=["POST"])
 def chat():
     """
-    This function will be used as an API-Endpoint to chat with the API
+    This function will be used as an API-Endpoint to chat with the LLM
+    It houses all the logic, required to chat with the LLM
+    
+    It offers two following modes of operation:
+    1. Chat with the LLM without function calling (this is the default mode, and it requires for the user to have used the /process endpoint before and appended the data to the request)
+    2. Chat with the LLM with function calling (this is the mode where the LLM is basically "using" the functionality behind the `/process` endpoint to get the data to chat with)
+    
     """
 
     resp_dict = response_dict.copy()
     system_message = request.form.get("system_message")
     user_message = request.form.get("user_message")
-
-    messages_list = [{"role": "system", "content": system_message}, {"role": "user", "content": user_message}]
+    submission_id = request.form.get("submission_id", None)
+    reprocess = request.form.get("reprocess")
+    if reprocess is not None:
+        reprocess = reprocess.lower() in ['true', '1', 't', 'y', 'yes']
+    function_calling = request.form.get("function_calling")
+    if function_calling is not None:
+        function_calling = function_calling.lower() in ['true', '1', 't', 'y', 'yes']
     
     try:
         logger = Logger("elastic", elastic_url=elastic_url, elastic_key=elastic_api_key)
-        chat = Chatter(logger, "llama3.2:latest")
-        resp_dict['data'] = chat.chat(messages_list)
+        chat = Chatter(logger, "llama3.2:latest", override_submission_id=submission_id)
+        resp_dict['data'] = chat.chat(system_message, user_message, function_calling, reprocess=reprocess)
         resp_dict['message'] = "Chat worked!"
         resp_dict['status'] = "success"
         return jsonify(resp_dict), 200
