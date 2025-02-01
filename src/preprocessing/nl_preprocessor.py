@@ -206,14 +206,21 @@ class NLPreprocessor(Preprocessor):
         if isinstance(leaf_candidate, dict):
             for key, value in leaf_candidate.items():
                 if isinstance(value, Iterable) and not isinstance(value, str):
-                    is_leaf = False
-                    break
+                    # I decided, that short lists (1 element) are still considered leaves, because they are not really a list, but a single value
+                    if len(value) > 1 or not self._check_for_leaf(value):
+                        print("is not leaf")
+                        print(value)
+                        is_leaf = False
+                        break
         
         elif isinstance(leaf_candidate, Iterable) and not isinstance(leaf_candidate, str):
-            for entry in leaf_candidate:
-                if isinstance(entry, Iterable) and not isinstance(entry, str):
-                    is_leaf = False
-                    break
+            if len(leaf_candidate) == 1 :
+                is_leaf = self._check_for_leaf(leaf_candidate[0])
+            elif len(leaf_candidate) > 1:
+                for entry in leaf_candidate:
+                    if isinstance(entry, Iterable) and not isinstance(entry, str):
+                        is_leaf = False
+                        break
         
         return is_leaf
     
