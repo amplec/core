@@ -148,7 +148,7 @@ class KartonPreprocessor(Preprocessor):
         :type triage_type: Optional[str], optional
         :return: triage data
         """
-        
+     
         return_dict = {}
         
         if triage_type not in ["overview", "report"]:
@@ -176,6 +176,12 @@ class KartonPreprocessor(Preprocessor):
             return_dict["id"] = sample.get("id", "")
             if triage_type == "report":
                 return_dict["signatures"] = self._cleanup_triage_signatures(response.json().get("signatures", []))
+                return_dict["processes"] = response.json().get("processes", [])
+                requests_from_triage = response.json().get("network", {}).get("requests", [])
+                return_dict["network_requests"] = []
+                for iterated_request in requests_from_triage:
+                    if not "dns_request" in iterated_request.keys() and not "dns_response" in iterated_request.keys():
+                        return_dict["network_requests"].append(iterated_request)
             else:
                 targets = response.json().get("targets", [])
                 return_dict["iocs"] = {
