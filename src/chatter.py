@@ -123,10 +123,4 @@ class Chatter:
             self.log.error("No content in the llm_response, response: " + str(llm_response))
             raise ValueError("No content response")
         
-        return llm_response.content
-        
-        
-        
-        
-        
-        
+        return llm_response.content    
