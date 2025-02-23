@@ -81,17 +81,12 @@ class Chatter:
             self.log.info("Searching for sample info with sample_id: " + sample_id + " and search_term: " + search_term)
             try:
                 ret_list = self.amplec.generate_llm_data_input_from_submission_id(sample_id, search_term, False, self.reprocess)
+                if not ret_list and " " in search_term:
+                    self.log.warning("Multiple search terms detected, splitting them and searching for each term separately")
+                    for term in search_term.split(" "): 
+                        ret_list.extend(self.amplec.generate_llm_data_input_from_submission_id(sample_id, term, False, self.reprocess))
                 if not ret_list:
-                    if " " in search_term:
-                        self.log.warning("Multiple search terms detected, splitting them and searching for each term separately")
-                        for term in search_term.split(" "):
-                            temp_list = self.amplec.generate_llm_data_input_from_submission_id(sample_id, term, False, self.reprocess)
-                            if temp_list != ["For the given search term, there was no information available, please say so to the user and dont hallucinate!"]:
-                                ret_list.extend(temp_list)
-                        if not ret_list:
-                            ret_list = ["For the given search term, there was no information available, please say so to the user and dont hallucinate!"]
-                    else:
-                        ret_list = ["For the given search term, there was no information available, please say so to the user and dont hallucinate!"]
+                    ret_list = ["For the given search term, there was no information available, please say so to the user and dont hallucinate!"]
                 
                 ret_str = ""
                 for item in ret_list:
