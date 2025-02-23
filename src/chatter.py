@@ -14,7 +14,7 @@ class Chatter:
     This means mainly interacting with the LLM and handling the conversations.
     """
     
-    def __init__(self, logger:Logger, model:str, ample_persistence_folder_path:Optional[str]=None, override_submission_id:Optional[str]=None) -> None:
+    def __init__(self, logger:Logger, model:str, amplec_persistence_folder_path:Optional[str]=None, override_submission_id:Optional[str]=None) -> None:
         """
         This is the constructor method for the Chatter class
         
@@ -22,8 +22,8 @@ class Chatter:
         :type logger: Logger
         :param model: This is a string with the model to use in the chat
         :type model: str
-        :param ample_persistence_folder_path: This is the folder path where the persistence data will be stored. ATTENTION, this is optional, and when not provided the path will be tried to load from the .env file, if neither .env nor parameter is provided, an error will be raised.
-        :type ample_persistence_folder_path: Optional[str]
+        :param amplec_persistence_folder_path: This is the folder path where the persistence data will be stored. ATTENTION, this is optional, and when not provided the path will be tried to load from the .env file, if neither .env nor parameter is provided, an error will be raised.
+        :type amplec_persistence_folder_path: Optional[str]
         :param override_submission_id: This is a string with the submission ID to override the submission ID for the use in the tool_call.
         :type override_submission_id: Optional[str]
         """
@@ -33,7 +33,7 @@ class Chatter:
         load_dotenv()
         
         self.url = os.getenv("OLLAMA_URL")
-        self.amplec = Amplec(logger, ample_persistence_folder_path)
+        self.amplec = Amplec(logger, amplec_persistence_folder_path)
         self.override_submission_id = override_submission_id
         
         if not self.url:
