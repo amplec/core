@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y curl git && \
                 waitress \
                 python-dotenv \ 
                 langchain \
+                langchain-openai \
                 langchain-ollama && \
     mkdir /home/core/persistence && \
     chown core:core -R /home/core

@@ -96,10 +96,27 @@ def chat():
     function_calling = request.form.get("function_calling")
     if function_calling is not None:
         function_calling = function_calling.lower() in ['true', '1', 't', 'y', 'yes']
+    model = request.form.get("model")
+    if model is not None:
+        model = model.lower()
+        if model not in ["llama3.2:3b", "llama3.1:8b", "gpt4o", "gpt4o-mini"]:
+            resp_dict['message'] = "Invalid model provided, model has to be one of the following: llama3.2:3b, llama3.1:8b, gpt4o, gpt4o-mini, you chose " + model
+            resp_dict['status'] = 'error'
+            return jsonify(resp_dict), 400
+    else: 
+        model = "llama3.2:latest"
+    api_key = request.form.get("api_key")
+    if model in ["gpt4o", "gpt4o-mini"]:
+        if not api_key:
+            resp_dict['message'] = "You need to provide an API key for the GPT-4 API"
+            resp_dict['status'] = 'error'
+            return jsonify(resp_dict), 400
+            
+    
     
     try:
         logger = Logger("elastic", elastic_url=elastic_url, elastic_key=elastic_api_key)
-        chat = Chatter(logger, "llama3.2:latest", override_submission_id=submission_id)
+        chat = Chatter(logger, model, override_submission_id=submission_id, openai_api_key=api_key)
         resp_dict['data'] = chat.chat(system_message, user_message, function_calling, reprocess=reprocess)
         resp_dict['message'] = "Chat worked!"
         resp_dict['status'] = "success"

@@ -2,6 +2,7 @@ from utils.logger import Logger
 from dotenv import load_dotenv
 import os
 from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 from langchain_core.tools import tool
 from langchain_core.messages import SystemMessage, HumanMessage
 from typing import Optional
@@ -14,7 +15,7 @@ class Chatter:
     This means mainly interacting with the LLM and handling the conversations.
     """
     
-    def __init__(self, logger:Logger, model:str, amplec_persistence_folder_path:Optional[str]=None, override_submission_id:Optional[str]=None) -> None:
+    def __init__(self, logger:Logger, model:str, amplec_persistence_folder_path:Optional[str]=None, override_submission_id:Optional[str]=None, openai_api_key:Optional[str]=None) -> None:
         """
         This is the constructor method for the Chatter class
         
@@ -26,6 +27,8 @@ class Chatter:
         :type amplec_persistence_folder_path: Optional[str]
         :param override_submission_id: This is a string with the submission ID to override the submission ID for the use in the tool_call.
         :type override_submission_id: Optional[str]
+        :param openai_api_key: This is a string with the OpenAI API Key to use in the chat
+        :type openai_api_key: Optional[str]
         """
         self.log = logger
         
@@ -38,6 +41,7 @@ class Chatter:
         
         if not self.url:
             raise ValueError("OLLAMA_URL is not set")
+        self.openai_api_key = openai_api_key
         
         self.reprocess = False
            
@@ -59,8 +63,12 @@ class Chatter:
         
         model = override_model if override_model else self.model
         self.reprocess = reprocess
-        
-        chat = ChatOllama(base_url=self.url, model=model)
+        if model in ["gpt4o", "gpt4o-mini"]:
+            if not self.openai_api_key:
+                raise ValueError("You need to provide an API key for the GPT-4 API")
+            chat = ChatOpenAI(model=model, api_key=self.openai_api_key)
+        else:
+            chat = ChatOllama(base_url=self.url, model=model)
         
         @tool
         def search_for_sample_info(sample_id: str, search_term:str) -> str:
