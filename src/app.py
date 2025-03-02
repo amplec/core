@@ -99,20 +99,18 @@ def chat():
     model = request.form.get("model")
     if model is not None:
         model = model.lower()
-        if model not in ["llama3.2:3b", "llama3.1:8b", "gpt4o", "gpt4o-mini"]:
-            resp_dict['message'] = "Invalid model provided, model has to be one of the following: llama3.2:3b, llama3.1:8b, gpt4o, gpt4o-mini, you chose " + model
+        if model not in ["llama3.2:3b", "llama3.1:8b", "gpt-4o", "gpt-4o-mini"]:
+            resp_dict['message'] = "Invalid model provided, model has to be one of the following: llama3.2:3b, llama3.1:8b, gpt-4o, gpt-4o-mini, you chose " + model
             resp_dict['status'] = 'error'
             return jsonify(resp_dict), 400
     else: 
         model = "llama3.2:latest"
     api_key = request.form.get("api_key")
-    if model in ["gpt4o", "gpt4o-mini"]:
+    if model in ["gpt-4o", "gpt-4o-mini"]:
         if not api_key:
             resp_dict['message'] = "You need to provide an API key for the GPT-4 API"
             resp_dict['status'] = 'error'
             return jsonify(resp_dict), 400
-            
-    
     
     try:
         logger = Logger("elastic", elastic_url=elastic_url, elastic_key=elastic_api_key)

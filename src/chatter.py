@@ -37,7 +37,8 @@ class Chatter:
         
         self.url = os.getenv("OLLAMA_URL")
         self.amplec = Amplec(logger, amplec_persistence_folder_path)
-        self.override_submission_id = override_submission_id
+        if override_submission_id:
+            self.override_submission_id = override_submission_id
         
         if not self.url:
             raise ValueError("OLLAMA_URL is not set")
@@ -63,12 +64,14 @@ class Chatter:
         
         model = override_model if override_model else self.model
         self.reprocess = reprocess
-        if model in ["gpt4o", "gpt4o-mini"]:
+        if model in ["gpt-4o", "gpt-4o-mini"]:
             if not self.openai_api_key:
                 raise ValueError("You need to provide an API key for the GPT-4 API")
             chat = ChatOpenAI(model=model, api_key=self.openai_api_key)
+            if self.override_submission_id:
+                user_message = user_message + " " + self.override_submission_id
         else:
-            chat = ChatOllama(base_url=self.url, model=model)
+            chat = ChatOllama(base_url=self.url, model=model, temperature=0.1)
         
         @tool
         def search_for_sample_info(sample_id: str, search_term:str) -> str:
@@ -114,7 +117,8 @@ class Chatter:
             ai_msg = chat.invoke(prompt)
             if not ai_msg.tool_calls:
                 self.log.error("No tools were called in the chat! ai_msg: " + str(ai_msg))
-                
+            if model in ["gpt-4o", "gpt-4o-mini"]:
+                prompt.append(ai_msg)
             for tool_call in ai_msg.tool_calls:
                 selected_tool = {"search_for_sample_info": search_for_sample_info}[tool_call["name"].lower()]
                 tool_msg = selected_tool.invoke(tool_call)
